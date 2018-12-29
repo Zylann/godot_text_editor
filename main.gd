@@ -25,7 +25,7 @@ var _formats = []
 var _keyword_regex = null
 var _symbol_regex = null
 var _string_regex = null
-var _comment_regex = null
+var _capitalized_word_regex = null
 
 
 func _ready():
@@ -36,7 +36,8 @@ func _ready():
 		{ "name": "keyword", "color": Color(0xffaa44ff) },
 		{ "name": "comment", "color": Color(0x666666ff) },
 		{ "name": "symbol", "color": Color(0xdd88ffff) },
-		{ "name": "string", "color": Color(0x66ff55ff) }
+		{ "name": "string", "color": Color(0x66ff55ff) },
+		{ "name": "type", "color": Color(0xffff44ff) }
 	]
 
 	var keywords = [
@@ -134,9 +135,9 @@ func _ready():
 	_string_regex = RegEx.new()
 	_string_regex.compile('"(?:[^"\\\\]|\\\\.)*"')
 	
-	_comment_regex = RegEx.new()
-	_comment_regex.compile("#.*")
-
+	_capitalized_word_regex = RegEx.new()
+	_capitalized_word_regex.compile("\\b[A-Z]+[a-z0-9]+\\b")
+	
 	_open_file("main.gd")
 
 
@@ -219,6 +220,14 @@ func _compute_line_format(text):
 			for i in range(comment_start, len(text)):
 				format[i] = 2
 			break
+	
+	results = _capitalized_word_regex.search_all(text)
+	for res in results:
+		var begin = res.get_start(0)
+		var end = res.get_end(0)
+		for i in range(begin, end):
+			if format[i] == 0:
+				format[i] = 5
 	
 	return format
 
