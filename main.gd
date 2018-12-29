@@ -21,6 +21,7 @@ var _tab_width = 0
 var _tab_ord = "\t".ord_at(0)
 var _default_text_color = Color(1, 1, 1, 1)
 var _formats = []
+var _scroll_offset = 0
 
 var _keyword_regex = null
 var _symbol_regex = null
@@ -141,6 +142,22 @@ func _ready():
 	_open_file("main.gd")
 
 
+func _input(event):
+	if event is InputEventMouseButton:
+		if event.pressed:
+			var scroll_speed = 3
+			if event.button_index == BUTTON_WHEEL_UP:
+				_scroll_offset -= scroll_speed
+				if _scroll_offset < 0:
+					_scroll_offset = 0
+				update()
+			elif event.button_index == BUTTON_WHEEL_DOWN:
+				_scroll_offset += scroll_speed
+				if _scroll_offset >= len(_wraps):
+					_scroll_offset = len(_wraps) - 1
+				update()
+
+
 func _set_font(font):
 	assert(font != null)
 	if _font == font:
@@ -234,12 +251,13 @@ func _compute_line_format(text):
 
 func _draw():
 	var line_height = _font.get_height()
+	var y = 0
 	
+	# TODO Draw proper visible area
 	# TODO Use wraps for real vs logical lines representation
-	for j in len(_lines):
+	for j in range(_scroll_offset, min(_scroll_offset + 40, len(_wraps))):
 		var line = _lines[j]
 		var ci = get_canvas_item()
-		var y = j * line_height + _font.get_ascent()
 		
 		var x = 0
 		var col = _default_text_color
@@ -256,6 +274,8 @@ func _draw():
 			x += _font.draw_char(ci, Vector2(x, y), c, -1, col)
 			if c == _tab_ord:
 				x += _tab_width
+		
+		y += line_height
 
 
 
