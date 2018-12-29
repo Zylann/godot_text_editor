@@ -52,12 +52,67 @@ func _ready():
 		"match",
 		"class",
 		"extends",
+		"is",
+		"as",
 		"range",
 		"return",
 		"break",
 		"continue",
+		"breakpoint",
+		"preload",
+		"yield",
+		"onready",
+		"true",
+		"false",
+
 		"load",
-		"preload"
+		"floor",
+		"ceil",
+		"round",
+		"sqrt",
+		"sign",
+		"stepify",
+		"exp",
+		"ease",
+		"decimals",
+		"db2linear",
+		"sin",
+		"sinh",
+		"asin",
+		"cos",
+		"cosh",
+		"acos",
+		"tan",
+		"tanh",
+		"atan",
+		"atan2",
+		"min",
+		"max",
+		"clamp",
+		"print",
+		"printerr",
+		"print_stack",
+		"print_debug",
+		"str2var",
+		"str",
+		"int",
+		"float",
+		"bool",
+		"seed",
+		"randf",
+		"randi",
+		"randomize",
+		"rand_range",
+		"lerp",
+		"range_lerp",
+		"assert",
+		"convert",
+		"typeof",
+		"type_exists",
+		"weakref",
+		"to_json",
+		"wrapf",
+		"wrapi"
 	]
 	
 	var keywords_regex_string = ""
@@ -68,8 +123,13 @@ func _ready():
 	_keyword_regex = RegEx.new()
 	_keyword_regex.compile(keywords_regex_string)
 	
+	var symbols = ".-*+/=[]()<>{}:,"
+	var symbols_regex_string = "["
+	for i in len(symbols):
+		symbols_regex_string = str(symbols_regex_string, "\\", symbols[i])
+	symbols_regex_string += "]"
 	_symbol_regex = RegEx.new()
-	_symbol_regex.compile("[\\.\\-\\*\\+/=\\[\\]\\(\\)\\<\\>\\{\\}\\:\\,]")
+	_symbol_regex.compile(symbols_regex_string)
 	
 	_string_regex = RegEx.new()
 	_string_regex.compile('"(?:[^"\\\\]|\\\\.)*"')
@@ -150,6 +210,15 @@ func _compute_line_format(text):
 		var end = res.get_end(0)
 		for i in range(begin, end):
 			format[i] = 4
+	
+	var comment_start = text.find("#")
+	while comment_start != -1:
+		if format[comment_start] == 4:
+			comment_start = text.find("#", comment_start + 1)
+		else:
+			for i in range(comment_start, len(text)):
+				format[i] = 2
+			break
 	
 	return format
 
