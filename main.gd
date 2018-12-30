@@ -43,18 +43,25 @@ var _func_regex = null
 
 func _ready():
 	_set_font(load("res://fonts/hack_regular.tres"))
-	
+	_load_colors()
+	_load_syntax()
+	_open_file("D:/PROJETS/INFO/GODOT/Plugins/HTerrain/heightmap/addons/zylann.hterrain/hterrain.gd")
+
+
+func _load_colors():
 	_formats = [
-		{ "name": "default", "color": Color(0xddddddff) }, # Temporary
+		{ "name": "default", "color": Color(0xdfdfdfff) }, # Temporary
 		{ "name": "keyword", "color": Color(0xffaa44ff) },
 		{ "name": "comment", "color": Color(0x888888ff) },
 		{ "name": "symbol", "color": Color(0xdd88ffff) },
 		{ "name": "string", "color": Color(0x66ff55ff) },
-		{ "name": "type", "color": Color(0xffff44ff) },
+		{ "name": "type", "color": Color(0xffff55ff) },
 		{ "name": "number", "color": Color(0x6699ffff) },
 		{ "name": "function", "color": Color(0xaaddffff) }
 	]
 
+
+func _load_syntax():
 	var keywords = [
 		"func",
 		"var",
@@ -78,8 +85,20 @@ func _ready():
 		"preload",
 		"yield",
 		"onready",
+		"const",
+		"signal",
+		"export",
+		"static",
+		"tool",
+		"self",
+		"and",
+		"or",
+		"xor",
+		"not",
+		
 		"true",
 		"false",
+		"null",
 
 		"load",
 		"floor",
@@ -139,7 +158,7 @@ func _ready():
 	_keyword_regex = RegEx.new()
 	_keyword_regex.compile(keywords_regex_string)
 	
-	var symbols = ".-*+/=[]()<>{}:,"
+	var symbols = ".-*+/=[]()<>{}:,!|^"
 	var symbols_regex_string = "["
 	for i in len(symbols):
 		symbols_regex_string = str(symbols_regex_string, "\\", symbols[i])
@@ -154,12 +173,10 @@ func _ready():
 	_capitalized_word_regex.compile("\\b[A-Z]+[a-zA-Z0-9_]+\\b")
 	
 	_number_regex = RegEx.new()
-	_number_regex.compile("\\b[0-9]x?[0-9a-fA-F\\.]*")
+	_number_regex.compile("(?:-|\\b)[0-9]x?[0-9a-fA-F\\.]*")
 	
 	_func_regex = RegEx.new()
 	_func_regex.compile("\\w+\\(")
-	
-	_open_file("main.gd")
 
 
 func _input(event):
@@ -224,6 +241,8 @@ func _open_file(path):
 
 
 func _set_text(text):
+	var time_before = OS.get_ticks_usec()
+	
 	# TODO Preserve line endings
 	var lines = text.split("\n")
 	
@@ -243,6 +262,8 @@ func _set_text(text):
 		wrap.length = len(line.text)
 		_wraps.append(wrap)
 	
+	var time_spent = OS.get_ticks_usec() - time_before
+	print("_set_text time: ", time_spent / 1000.0, "ms")
 	update()
 
 
@@ -252,7 +273,10 @@ func _compute_line_format(text):
 	for i in len(format):
 		format[i] = 0
 	
-	var results = _keyword_regex.search_all(text)
+	var results
+	
+	# TODO Keywords take about 40% of the time, find a way to optimize this
+	results = _keyword_regex.search_all(text)
 	for res in results:
 		var begin = res.get_start(0)
 		var end = res.get_end(0)
