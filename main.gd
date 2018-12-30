@@ -14,14 +14,20 @@ class Wrap:
 
 
 var _font : Font
-var _lines = []
-var _wraps = []
 var _tab_size = 4
 var _tab_width = 0
 var _tab_ord = "\t".ord_at(0)
 var _default_text_color = Color(1, 1, 1, 1)
 var _formats = []
+var _scroll_speed = 4
+
 var _scroll_offset = 0
+var _smooth_scroll_offset = 0
+var _smooth_scroll_offset_prev = 0.0
+var _smooth_scroll_time = 0.0
+var _smooth_scroll_duration = 0.1
+var _lines = []
+var _wraps = []
 
 var _keyword_regex = null
 var _symbol_regex = null
@@ -35,7 +41,7 @@ func _ready():
 	_formats = [
 		{ "name": "default", "color": Color(0xddddddff) }, # Temporary
 		{ "name": "keyword", "color": Color(0xffaa44ff) },
-		{ "name": "comment", "color": Color(0x666666ff) },
+		{ "name": "comment", "color": Color(0x888888ff) },
 		{ "name": "symbol", "color": Color(0xdd88ffff) },
 		{ "name": "string", "color": Color(0x66ff55ff) },
 		{ "name": "type", "color": Color(0xffff44ff) }
@@ -145,17 +151,41 @@ func _ready():
 func _input(event):
 	if event is InputEventMouseButton:
 		if event.pressed:
-			var scroll_speed = 3
+			
 			if event.button_index == BUTTON_WHEEL_UP:
-				_scroll_offset -= scroll_speed
-				if _scroll_offset < 0:
-					_scroll_offset = 0
-				update()
+				_scroll(-_scroll_speed)
+				
 			elif event.button_index == BUTTON_WHEEL_DOWN:
-				_scroll_offset += scroll_speed
-				if _scroll_offset >= len(_wraps):
-					_scroll_offset = len(_wraps) - 1
-				update()
+				_scroll(_scroll_speed)
+
+
+func _scroll(delta):
+	_scroll_offset += delta
+	
+	if _scroll_offset < 0:
+		_scroll_offset = 0
+	elif _scroll_offset >= len(_wraps):
+		_scroll_offset = len(_wraps) - 1
+	
+	if _smooth_scroll_duration > 0.01:
+		_smooth_scroll_time = _smooth_scroll_duration
+		_smooth_scroll_offset_prev = _smooth_scroll_offset
+	else:
+		_smooth_scroll_time = 0.0
+		_smooth_scroll_offset = _scroll_offset
+	
+	update()
+
+
+func _process(delta):
+	if _smooth_scroll_time > 0.0:
+		_smooth_scroll_time -= delta
+		if _smooth_scroll_time < 0.0:
+			_smooth_scroll_time = 0.0
+		var t = clamp(1.0 - _smooth_scroll_time / _smooth_scroll_duration, 0.0, 1.0)
+		t = sqrt(t)
+		_smooth_scroll_offset = lerp(_smooth_scroll_offset_prev, _scroll_offset, t)
+		update()
 
 
 func _set_font(font):
@@ -250,12 +280,25 @@ func _compute_line_format(text):
 
 
 func _draw():
-	var line_height = _font.get_height()
-	var y = 0
+	var line_height = int(_font.get_height())
+	var scroll_offset = _smooth_scroll_offset
+	
+	var y = 1.0 - line_height * (scroll_offset - int(scroll_offset))
+	y += _font.get_ascent()
+	
+	var visible_lines = int(rect_size.y) / line_height
+	var begin_line_index = int(scroll_offset)
+	var end_line_index = begin_line_index + visible_lines
+
+	if begin_line_index >= len(_wraps):
+		begin_line_index = len(_wraps) - 1
+	
+	if end_line_index >= len(_wraps):
+		end_line_index = len(_wraps) - 1
 	
 	# TODO Draw proper visible area
 	# TODO Use wraps for real vs logical lines representation
-	for j in range(_scroll_offset, min(_scroll_offset + 40, len(_wraps))):
+	for j in range(begin_line_index, end_line_index):
 		var line = _lines[j]
 		var ci = get_canvas_item()
 		
