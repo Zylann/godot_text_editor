@@ -13,6 +13,17 @@ class Wrap:
 	var length = 0
 
 
+const HL_DEFAULT = 0
+const HL_KEYWORD = 1
+const HL_COMMENT = 2
+const HL_SYMBOL = 3
+const HL_STRING = 4
+const HL_TYPE = 5
+const HL_NUMBER = 6
+const HL_FUNCTION = 7
+const HL_COUNT = 8
+
+
 var _font : Font
 var _tab_size = 4
 var _tab_width = 0
@@ -49,16 +60,15 @@ func _ready():
 
 
 func _load_colors():
-	_formats = [
-		{ "name": "default", "color": Color(0xdfdfdfff) }, # Temporary
-		{ "name": "keyword", "color": Color(0xffaa44ff) },
-		{ "name": "comment", "color": Color(0x888888ff) },
-		{ "name": "symbol", "color": Color(0xdd88ffff) },
-		{ "name": "string", "color": Color(0x66ff55ff) },
-		{ "name": "type", "color": Color(0xffff55ff) },
-		{ "name": "number", "color": Color(0x6699ffff) },
-		{ "name": "function", "color": Color(0xaaddffff) }
-	]
+	_formats.resize(HL_COUNT)
+	_formats[HL_DEFAULT] = { "name": "default", "color": Color(0xdfdfdfff) }
+	_formats[HL_KEYWORD] = { "name": "keyword", "color": Color(0xffaa44ff) }
+	_formats[HL_COMMENT] = { "name": "comment", "color": Color(0x888888ff) }
+	_formats[HL_SYMBOL] = { "name": "symbol", "color": Color(0xdd88ffff) }
+	_formats[HL_STRING] = { "name": "string", "color": Color(0x66ff55ff) }
+	_formats[HL_TYPE] = { "name": "type", "color": Color(0xffff55ff) }
+	_formats[HL_NUMBER] = { "name": "number", "color": Color(0x6699ffff) }
+	_formats[HL_FUNCTION] = { "name": "function", "color": Color(0xaaddffff) }
 
 
 func _load_syntax():
@@ -271,7 +281,7 @@ func _compute_line_format(text):
 	var format = []
 	format.resize(len(text))
 	for i in len(format):
-		format[i] = 0
+		format[i] = HL_DEFAULT
 	
 	var results
 	
@@ -281,30 +291,30 @@ func _compute_line_format(text):
 		var begin = res.get_start(0)
 		var end = res.get_end(0)
 		for i in range(begin, end):
-			format[i] = 1
+			format[i] = HL_KEYWORD
 	
 	results = _number_regex.search_all(text)
 	for res in results:
 		var begin = res.get_start(0)
 		var end = res.get_end(0)
 		for i in range(begin, end):
-			if format[i] == 0:
-				format[i] = 6
+			if format[i] == HL_DEFAULT:
+				format[i] = HL_NUMBER
 
 	results = _symbol_regex.search_all(text)
 	for res in results:
 		var begin = res.get_start(0)
 		var end = res.get_end(0)
 		for i in range(begin, end):
-			if format[i] == 0:
-				format[i] = 3
+			if format[i] == HL_DEFAULT:
+				format[i] = HL_SYMBOL
 
 	results = _string_regex.search_all(text)
 	for res in results:
 		var begin = res.get_start(0)
 		var end = res.get_end(0)
 		for i in range(begin, end):
-			format[i] = 4
+			format[i] = HL_STRING
 	
 	var comment_start = text.find("#")
 	while comment_start != -1:
@@ -312,7 +322,7 @@ func _compute_line_format(text):
 			comment_start = text.find("#", comment_start + 1)
 		else:
 			for i in range(comment_start, len(text)):
-				format[i] = 2
+				format[i] = HL_COMMENT
 			break
 	
 	results = _capitalized_word_regex.search_all(text)
@@ -320,16 +330,16 @@ func _compute_line_format(text):
 		var begin = res.get_start(0)
 		var end = res.get_end(0)
 		for i in range(begin, end):
-			if format[i] == 0:
-				format[i] = 5
+			if format[i] == HL_DEFAULT:
+				format[i] = HL_TYPE
 
 	results = _func_regex.search_all(text)
 	for res in results:
 		var begin = res.get_start(0)
 		var end = res.get_end(0) - 1
 		for i in range(begin, end):
-			if format[i] == 0:
-				format[i] = 7
+			if format[i] == HL_DEFAULT:
+				format[i] = HL_FUNCTION
 	
 	return format
 
