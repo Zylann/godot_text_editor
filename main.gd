@@ -286,6 +286,8 @@ func _draw():
 	var y = 1.0 - line_height * (scroll_offset - int(scroll_offset))
 	y += _font.get_ascent()
 	
+	var width = rect_size.x
+	
 	var visible_lines = int(rect_size.y) / line_height
 	var begin_line_index = int(scroll_offset)
 	var end_line_index = begin_line_index + visible_lines
@@ -296,16 +298,16 @@ func _draw():
 	if end_line_index >= len(_wraps):
 		end_line_index = len(_wraps) - 1
 	
-	# TODO Draw proper visible area
-	# TODO Use wraps for real vs logical lines representation
 	for j in range(begin_line_index, end_line_index):
-		var line = _lines[j]
+		
+		var wrap = _wraps[j]
+		var line = _lines[wrap.line_index]
 		var ci = get_canvas_item()
 		
 		var x = 0
 		var col = _default_text_color
 		
-		for i in len(line.text):
+		for i in range(wrap.start, wrap.start + wrap.length):
 			var c = line.text.ord_at(i)
 			
 			if len(line.format) == 0:
@@ -317,6 +319,10 @@ func _draw():
 			x += _font.draw_char(ci, Vector2(x, y), c, -1, col)
 			if c == _tab_ord:
 				x += _tab_width
+			
+			if x >= width:
+				# TODO Word wrap
+				break
 		
 		y += line_height
 
