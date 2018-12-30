@@ -16,7 +16,7 @@ _global_script_class_icons={
 [application]
 
 config/name="Nouveau projet de jeu"
-run/main_scene="res://fonts/main.tscn"
+run/main_scene="res://main.tscn"
 config/icon="res://icon.png"
 
 [rendering]
