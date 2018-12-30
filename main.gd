@@ -29,6 +29,10 @@ var _smooth_scroll_duration = 0.1
 var _lines = []
 var _wraps = []
 
+var _line_numbers_gutter_width = 70
+var _line_numbers_color = Color(0x666666ff)
+var _line_numbers_right_padding = 25
+
 var _keyword_regex = null
 var _symbol_regex = null
 var _string_regex = null
@@ -303,8 +307,15 @@ func _draw():
 		var wrap = _wraps[j]
 		var line = _lines[wrap.line_index]
 		var ci = get_canvas_item()
-		
+
 		var x = 0
+		
+		x += _line_numbers_gutter_width
+		if wrap.start == 0:
+			var ln = str(wrap.line_index + 1)
+			var s = _font.get_string_size(ln)
+			_font.draw(ci, Vector2(x - _line_numbers_right_padding - s.x, y), ln, _line_numbers_color)
+		
 		var col = _default_text_color
 		
 		for i in range(wrap.start, wrap.start + wrap.length):
