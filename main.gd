@@ -38,6 +38,7 @@ var _symbol_regex = null
 var _string_regex = null
 var _capitalized_word_regex = null
 var _number_regex = null
+var _func_regex = null
 
 
 func _ready():
@@ -50,7 +51,8 @@ func _ready():
 		{ "name": "symbol", "color": Color(0xdd88ffff) },
 		{ "name": "string", "color": Color(0x66ff55ff) },
 		{ "name": "type", "color": Color(0xffff44ff) },
-		{ "name": "number", "color": Color(0x6699ffff) }
+		{ "name": "number", "color": Color(0x6699ffff) },
+		{ "name": "function", "color": Color(0xaaddffff) }
 	]
 
 	var keywords = [
@@ -149,10 +151,13 @@ func _ready():
 	_string_regex.compile('"(?:[^"\\\\]|\\\\.)*"')
 	
 	_capitalized_word_regex = RegEx.new()
-	_capitalized_word_regex.compile("\\b[A-Z]+[a-z0-9]+\\b")
+	_capitalized_word_regex.compile("\\b[A-Z]+[a-zA-Z0-9_]+\\b")
 	
 	_number_regex = RegEx.new()
 	_number_regex.compile("\\b[0-9]x?[0-9a-fA-F\\.]*")
+	
+	_func_regex = RegEx.new()
+	_func_regex.compile("\\w+\\(")
 	
 	_open_file("main.gd")
 
@@ -293,6 +298,14 @@ func _compute_line_format(text):
 		for i in range(begin, end):
 			if format[i] == 0:
 				format[i] = 5
+
+	results = _func_regex.search_all(text)
+	for res in results:
+		var begin = res.get_start(0)
+		var end = res.get_end(0) - 1
+		for i in range(begin, end):
+			if format[i] == 0:
+				format[i] = 7
 	
 	return format
 
